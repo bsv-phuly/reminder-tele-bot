@@ -1,4 +1,4 @@
-import { Bot, Context, session, SessionFlavor } from 'grammy';
+import { Bot, session } from 'grammy';
 import { MongoDBAdapter } from '@grammyjs/storage-mongodb';
 import { connectToDatabase } from './db';
 import { User } from './models/user';
