@@ -1,6 +1,6 @@
 import { Bot, session } from 'grammy';
 import { MongoDBAdapter } from '@grammyjs/storage-mongodb';
-import { connectToDatabase } from './db';
+import { connectToDatabase } from './database/db';
 import { User } from './models/user';
 import mongoose, { Collection } from 'mongoose';
 import dotenv from 'dotenv';
