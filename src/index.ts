@@ -10,6 +10,7 @@ import { BotToken, MyContext, SessionData } from './constants/common';
 dotenv.config();
 
 async function startBot() {
+    console.log("Service started...");
     // Connect to MongoDB
     await connectToDatabase();
 
@@ -29,6 +30,10 @@ async function startBot() {
     // bot.command('start', handleStartCommand);
     // bot.command('profile', handleProfileCommand);
     registerCommands(bot);
+
+    setInterval(() => {
+        console.log(new Date().toISOString());
+    }, 5000);
 
     // Handle text messages
     bot.on('message:text', async (ctx) => {
