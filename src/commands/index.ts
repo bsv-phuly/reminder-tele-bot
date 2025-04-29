@@ -25,7 +25,6 @@ const commands: Command[] = [
 
 export function registerCommands(bot: Bot<MyContext>) {
     for (const command of commands) {
-        console.log(command.name, 'registerCommands');
         bot.command([command.name], (ctx) => command.execute(ctx));
     }
 }

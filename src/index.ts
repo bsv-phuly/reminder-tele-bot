@@ -40,9 +40,6 @@ async function startBot() {
             const telegramId = ctx.from?.id;
             const text = ctx.message.text ? ctx.message.text : ctx.message.caption;
             const commandInput = text;
-            console.log(text, 'texttexttexttexttext')
-            
-            console.log(ctx, 'ctx')
             if (telegramId) {
                 // Update user's last interaction
                 await User.updateOne(
