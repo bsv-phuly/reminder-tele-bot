@@ -31,10 +31,6 @@ async function startBot() {
     // bot.command('profile', handleProfileCommand);
     registerCommands(bot);
 
-    setInterval(() => {
-        console.log(new Date().toISOString());
-    }, 5000);
-
     // Handle text messages
     bot.on('message:text', async (ctx) => {
         try {
