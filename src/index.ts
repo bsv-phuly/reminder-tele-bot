@@ -4,8 +4,11 @@ import { connectToDatabase } from './database/db';
 import { User } from './models/user';
 import mongoose, { Collection } from 'mongoose';
 import dotenv from 'dotenv';
-import { registerCommands } from './commands';
+import { getAllCommands, registerCommands } from './commands';
 import { BotToken, MyContext, SessionData } from './constants/common';
+import { initializeAllReminders } from './commands/setup';
+import { chatCommand } from './commands/chat';
+import handleChatImage from './services/useChatImage';
 
 dotenv.config();
 
@@ -25,17 +28,21 @@ async function startBot() {
             collection: collection as any
         })
     }));
-
+    
     // Register command handlers
-    // bot.command('start', handleStartCommand);
-    // bot.command('profile', handleProfileCommand);
+    await bot.api.setMyCommands(getAllCommands());
     registerCommands(bot);
+    await initializeAllReminders(bot.api);
 
     // Handle text messages
-    bot.on('message:text', async (ctx) => {
+    bot.on('message', async (ctx) => {
         try {
             const telegramId = ctx.from?.id;
-
+            const text = ctx.message.text ? ctx.message.text : ctx.message.caption;
+            const commandInput = text;
+            console.log(text, 'texttexttexttexttext')
+            
+            console.log(ctx, 'ctx')
             if (telegramId) {
                 // Update user's last interaction
                 await User.updateOne(
@@ -46,9 +53,14 @@ async function startBot() {
                     },
                     { upsert: false }
                 );
+                if (commandInput && commandInput.startsWith("/chat")) {
+                    await handleChatImage(ctx);
+                    return;
+                }
+                await ctx.reply('I received your message! Try /profile to see your stats.');
             }
+            
 
-            await ctx.reply('I received your message! Try /profile to see your stats.');
         } catch (error) {
             console.error('Error handling message:', error);
         }

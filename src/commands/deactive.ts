@@ -1,7 +1,8 @@
 import { Context } from 'grammy';
-import { Command } from '../constants/common';
+import { Command, userCronJobs } from '../constants/common';
 import { Reminder } from '../models/reminder';
 import { catchReplyError } from '../utils/catchError';
+import { getJobKey, stopExistingJob } from '../utils/commonFunction';
 
 const handleDeactiveReminder = async (ctx: Context) => {
     const chatId = ctx.chatId;
@@ -12,6 +13,9 @@ const handleDeactiveReminder = async (ctx: Context) => {
     try {
         const setup = await Reminder.findOne({ chatId });
         if (!setup?.remindTime) return ctx.reply('Reminder notfound please /setup to set a new reminder');
+        const jobKey = getJobKey(chatId, setup.linkRemind || "", setup.remindTime || "");
+        stopExistingJob(userCronJobs, jobKey);
+
         const time = setup?.remindTime;
         const link = setup?.linkRemind;
 
@@ -22,6 +26,7 @@ const handleDeactiveReminder = async (ctx: Context) => {
             },
             { upsert: false }
         );
+        await setup.save();
         await ctx.reply(`✅ Reminder for ${link} at ${time} is now deactive!`);
     } catch (error) {
         await catchReplyError(error, ctx, 'deactive');

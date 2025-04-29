@@ -1,14 +1,70 @@
 import { CronJob } from 'cron';
 import { Context } from 'grammy';
-import { Command } from '../constants/common';
+import { Command, userCronJobs } from '../constants/common';
 import { Reminder } from '../models/reminder';
 import { catchReplyError } from '../utils/catchError';
+import { getJobKey, stopExistingJob } from '../utils/commonFunction';
+
+function startCronJob(chatId: number, link: string, time: string, api: Context['api']) {
+    const [hour, minute] = time.split(":").map(Number);
+    const defaultCronDays = "1,2,3,4,5"; // Monday to Friday
+    const timezone = "Asia/Bangkok";
+    const cronExpression = `${minute} ${hour} * * ${defaultCronDays}`;
+    const jobKey = getJobKey(chatId, link, time);
+
+    // Stop existing job if it exists
+    stopExistingJob(userCronJobs, jobKey);
+
+    // Create new CronJob
+    const job = new CronJob(
+        cronExpression,
+        async () => {
+            try {
+                await api.sendMessage(chatId, `⏰ Reminder for you! 🔗 ${link}`);
+
+                // Update last run time in database
+                await Reminder.updateOne(
+                    { chatId, linkRemind: link, remindTime: time },
+                    { $set: { updateAt: new Date() } }
+                );
+            } catch (error) {
+                console.error(`Error sending reminder to ${chatId}:`, error);
+            }
+        },
+        null,
+        true, // start immediately
+        timezone
+    );
+
+    // Store in memory
+    userCronJobs.set(jobKey, job);
+
+    // Return job info for reference
+    return {
+        cronExpression,
+        hour,
+        minute,
+        days: defaultCronDays,
+        timezone,
+        jobKey
+    };
+}
+
+export async function initializeAllReminders(api: Context['api']) {
+    const activeReminders = await Reminder.find({ status: true });
+
+    for (const reminder of activeReminders) {
+        if (reminder.chatId && reminder.linkRemind && reminder.remindTime) {
+            startCronJob(reminder.chatId, reminder.linkRemind, reminder.remindTime, api);
+        }
+    }
+}
 
 async function handleSetupCommand(ctx: Context) {
     const chatId = ctx.chatId;
     const text = ctx.message?.text
     const timeRegex = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
-    const userCronJobs = new Map<string, CronJob>();
+
     const defaultCronDays = "1,2,3,4,5";
 
     if (!chatId) {
@@ -31,57 +87,35 @@ async function handleSetupCommand(ctx: Context) {
     }
 
     try {
+        const [hour, minute] = time.split(":").map(Number);
+        const cronExpression = `${minute} ${hour} * * ${defaultCronDays}`;
+         // Start the cron job and get the job info
+        startCronJob(chatId, link, time, ctx.api);
         const reminderInfo = await Reminder.findOne({ chatId });
 
         const params = {
             linkRemind: link,
-            remindTime: time
+            remindTime: time,
+            cronExpression: cronExpression,
         }
         if (!reminderInfo) {
             await Reminder.insertOne({
                 chatId: chatId,
-                linkRemind: params?.linkRemind,
-                remindTime: params?.remindTime,
                 createdAt: new Date(),
-                status: true
+                status: true,
+                ...params
             });
         } else {
             await Reminder.updateOne(
                 { chatId },
                 {
-                    $set: { updateAt: new Date(), status: true, linkRemind: params?.linkRemind, remindTime: params?.remindTime },
+                    $set: { updateAt: new Date(), status: true, ...params },
                 },
                 { upsert: false }
             );
+            await reminderInfo.save();
         }
-        // Parse time into cron format
-        const [hour, minute] = time.split(":").map(Number);
-
-        // Unique key per user setup
-        const jobKey = `${chatId}_${link}_${time}`;
-
-        // If already has a job with same key, stop it first
-        const existingJob = userCronJobs.get(jobKey);
-        if (existingJob) {
-            existingJob.stop();
-            userCronJobs.delete(jobKey);
-        }
-
-        // Create new CronJob
-        const job = new CronJob(
-            `${minute} ${hour} * * ${defaultCronDays}`,
-            async () => {
-                await ctx.api.sendMessage(chatId, `⏰ Reminder for you! 🔗 ${link}`);
-            },
-            null,
-            true, // start immediately
-            "Asia/Bangkok" // timezone
-        );
-
-        // Store in memory
-        userCronJobs.set(jobKey, job);
         await ctx.reply(`✅ Setup save!\n🔗 Link: ${link}\n⏰ Time: ${time}`);
-        // await reminderInfo.save();
     } catch (error) {
         await catchReplyError(error, ctx, 'setup');
     }

@@ -1,3 +1,5 @@
+import { CronJob } from "cron";
+
 export function formatTime(date: Date): string {
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
@@ -13,4 +15,16 @@ export function parseTimeToDate(timeString: string): Date {
 export function formatTimeLine(time: string) {
     const reminderDate = parseTimeToDate(time);
     return formatTime(reminderDate);
+}
+
+export function getJobKey(chatId: number, link: string, time: string): string {
+    return `${chatId}_${link}_${time}`;
+}
+
+export function stopExistingJob(userCronJobs: Map<string, CronJob>, jobKey: string) {
+    const existingJob = userCronJobs.get(jobKey);
+    if (existingJob) {
+        existingJob.stop();
+        userCronJobs.delete(jobKey);
+    }
 }
