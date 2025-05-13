@@ -1,4 +1,4 @@
-import { Bot, Context, session } from 'grammy';
+import { Bot, Context, session, webhookCallback } from 'grammy';
 import { OrderProcessor } from '../services/orderProcessor';
 import { defaultCronDays, MyContext, SessionData } from '../constants/common';
 import mongoose from 'mongoose';
@@ -36,7 +36,7 @@ export class TelegramBot {
                 collection: collection as any,
             })
         }));
-
+        webhookCallback(this.bot, "https");
         // Add middleware to save user and chat information
         this.bot.use(saveUserAndChatMiddleware);
         // Init cronJob timer
