@@ -1,5 +1,4 @@
 import { Bot } from 'grammy';
-import { startCommand } from './start';
 import { profileCommand } from './profile';
 import { chatCommand } from './chat';
 import { listCommand } from './list';
@@ -12,7 +11,6 @@ import { MyContext } from '../constants/common';
 import { clearHistoryCommand } from './clearhistory';
 
 const commands: Command[] = [
-    startCommand,
     profileCommand,
     chatCommand,
     listCommand,

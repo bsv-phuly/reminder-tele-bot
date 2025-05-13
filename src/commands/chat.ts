@@ -14,7 +14,7 @@ import saveChatHistory from '../utils/useSaveHistory';
 dotenv.config();
 
 // Initialize the Google Generative AI client
-const modelName = 'gemini-2.0-flash';
+const modelName = 'gemini-2.5-flash-preview-04-17';
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 async function fileToGenerativePart(filePath: string, mimeType: string) {
@@ -25,6 +25,36 @@ async function fileToGenerativePart(filePath: string, mimeType: string) {
             mimeType
         },
     };
+}
+
+function escapeMarkdown(text: string): string {
+    return text.replace(/[_*[\]()~`>#+=|{}.!\\-]/g, (char) => '\\' + char);
+}
+
+function formatMarkdownWithCode(text: string): string {
+    const codeBlockRegex = /```([\s\S]*?)```/g;
+    let result = '';
+    let lastIndex = 0;
+
+    // Iterate over all code blocks
+    for (const match of text.matchAll(codeBlockRegex)) {
+        const [fullMatch, codeContent] = match;
+        const index = match.index ?? 0;
+
+        // Escape and append text before the code block
+        const beforeCode = text.slice(lastIndex, index);
+        result += escapeMarkdown(beforeCode);
+
+        // Append the raw (already in triple-backtick format) code block
+        result += `\n\`\`\`\n${escapeMarkdown(codeContent)}\n\`\`\``;
+
+        lastIndex = index + fullMatch.length;
+    }
+
+    // Escape and append remaining text after last code block
+    result += escapeMarkdown(text.slice(lastIndex));
+
+    return result;
 }
 
 async function handleGeminiCommand(ctx: Context) {
@@ -72,8 +102,9 @@ async function handleGeminiCommand(ctx: Context) {
             hasImage: false
         }, username, ctx.chatId);
 
+        const formatText = formatMarkdownWithCode(text);
         // Send the response back to the user
-        await ctx.reply(text);
+        await ctx.reply(formatText, { parse_mode: "MarkdownV2" });
     } catch (error) {
         await catchReplyError(error, ctx, 'chat');
     }

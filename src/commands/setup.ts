@@ -1,13 +1,14 @@
 import { CronJob } from 'cron';
 import { Context } from 'grammy';
-import { Command, userCronJobs } from '../constants/common';
+import { Command, defaultCronDays, userCronJobs } from '../constants/common';
 import { Reminder } from '../models/reminder';
 import { catchReplyError } from '../utils/catchError';
 import { getJobKey, stopExistingJob } from '../utils/commonFunction';
+import { Chat } from '../models/chats';
+import { DailySummaryCronJob } from '../bot';
 
 function startCronJob(chatId: number, link: string, time: string, api: Context['api']) {
     const [hour, minute] = time.split(":").map(Number);
-    const defaultCronDays = "1,2,3,4,5"; // Monday to Friday
     const timezone = "Asia/Bangkok";
     const cronExpression = `${minute} ${hour} * * ${defaultCronDays}`;
     const jobKey = getJobKey(chatId, link, time);
@@ -64,8 +65,6 @@ async function handleSetupCommand(ctx: Context) {
     const chatId = ctx.chatId;
     const text = ctx.message?.text
     const timeRegex = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
-
-    const defaultCronDays = "1,2,3,4,5";
 
     if (!chatId) {
         return ctx.reply('Sorry, something went wrong.');

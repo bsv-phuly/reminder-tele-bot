@@ -1,16 +1,26 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import { Chat, IChat } from '../models/chats';
+import { IUser, User } from '../models/user';
+import { IOrder, Order } from '../models/orders';
+import { config } from '../config';
 
-dotenv.config();
+export class Database {
+    constructor(private uri: string = config.mongodb.uri, private dbName: string = config.mongodb.dbName) {
+        mongoose.set('strictQuery', false);
+    }
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/telegram-bot';
+    async connect(): Promise<void> {
+        try {
+            await mongoose.connect(this.uri, { dbName: this.dbName});
+            console.log('Connected to MongoDB');
+        } catch (error) {
+            console.error('Failed to connect to MongoDB:', error);
+            throw error;
+        }
+    }
 
-export async function connectToDatabase() {
-    try {
-        await mongoose.connect(MONGODB_URI);
-        console.log('Connected to MongoDB');
-    } catch (error) {
-        console.error('MongoDB connection error:', error);
-        process.exit(1);
+    async close(): Promise<void> {
+        await mongoose.disconnect();
+        console.log('MongoDB connection closed');
     }
 }

@@ -1,0 +1,12 @@
+[vars]
+BOT_INFO = """{
+    "id": 7573346578,
+    "is_bot": true,
+    "first_name": "Jeff (beta)",
+    "username": "bsv_Jeff_bot",
+    "can_join_groups": true,
+    "can_read_all_group_messages": true,
+    "supports_inline_queries": false,
+    "can_connect_to_business": false,
+    "has_main_web_app": false
+}"""

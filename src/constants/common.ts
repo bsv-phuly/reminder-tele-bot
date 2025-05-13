@@ -1,9 +1,13 @@
 import { CronJob } from "cron";
-import { Bot, Context, SessionFlavor } from "grammy";
+import { Context, SessionFlavor } from "grammy";
+import dotenv from 'dotenv';
 
+dotenv.config();
+export const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/telegram-bot';
 // Define session data interface
 export interface SessionData {
     lastCommand?: string;
+    isAdmin?: boolean;
     // Add any other session data fields
 }
 
@@ -32,3 +36,5 @@ export interface ChatMessage {
     timestamp: Date;
     hasImage?: boolean;
 }
+
+export const defaultCronDays = "1-5"; // Monday to Friday
