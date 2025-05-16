@@ -1,6 +1,9 @@
 import { Chat, IChat } from "../models/chats";
 import { IOrder, Order } from "../models/orders";
+import { IProducts, Products } from "../models/products";
 import { IUser, User } from "../models/user";
+import { expandAbbreviations, normalizeText } from "../utils/commonFunction";
+import { logger } from "../utils/logger";
 
 export class UserRepository {
     async findByTelegramId(telegramId: number): Promise<IUser | null> {
@@ -44,13 +47,13 @@ export class OrderRepository {
     async getOrdersForDay(date: Date = new Date()): Promise<IOrder[]> {
         const startOfDay = new Date(date);
         startOfDay.setHours(0, 0, 0, 0);
-        
+
         const endOfDay = new Date(date);
         endOfDay.setHours(23, 59, 59, 999);
-        
+
         return this.getOrdersInDateRange(startOfDay, endOfDay);
     }
-    
+
     async getUsersWithOrdersToday(): Promise<IUser[]> {
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
@@ -101,5 +104,33 @@ export class ChatRepository {
             { chatId },
             { $set: { sendSummaries } }
         );
+    }
+}
+
+export class ProductRepository {
+    async createProducts(products: IProducts[]): Promise<any> {
+        try {
+            console.log(products, 'create products');
+            Products.insertMany(products);
+        } catch (error) {
+            logger.error("Failed to create products", error);
+        }
+    }
+
+    async searchProducts(input: any): Promise<any> {
+        const expandedInput = expandAbbreviations(input);
+        const searchResults = await Products.collection.find({
+            name: { $regex: expandedInput, $options: 'i' }
+        }).toArray();
+        console.log(searchResults, 'searchResults')
+
+        const normalizedSearch = normalizeText(expandedInput);
+        const searchWords = normalizedSearch.split(/\s+/);
+        console.log(searchWords, 'searchResults')
+        return searchResults.filter(doc => {
+            const normalizedName = normalizeText(doc.name);
+            console.log('normalizedName from doc', normalizedName);
+            return searchWords.every(word => normalizedName.includes(word));
+        });
     }
 }

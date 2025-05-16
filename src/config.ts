@@ -17,6 +17,7 @@ export interface Config {
         summaryTime: string;
         timezone: string;
     };
+    port: string;
     environment: string;
 }
 
@@ -46,5 +47,6 @@ export const config: Config = {
         summaryTime: getEnvVariable('CRON_TIME', '0 17 * * *'),
         timezone: getEnvVariable('TIMEZONE', 'Asia/Ho_Chi_Minh'),
     },
+    port: getEnvVariable('PORT', '3000'),
     environment: getEnvVariable('NODE_ENV', 'development'),
 };

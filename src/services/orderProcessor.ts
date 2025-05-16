@@ -1,9 +1,9 @@
-import { ChatRepository } from './../database/repository';
 import { IDailyTotal } from './../models/dailyTotal';
 import { IOrder } from './../models/orders';
-import { OrderRepository } from '../database/repository';
+import { OrderRepository, ChatRepository, ProductRepository } from '../database/repository';
 import { Chat } from '../models/chats';
 import { DailySummaryCronJob } from '../bot';
+import { IProducts } from '../models/products';
 
 export class OrderProcessor {
     constructor(private orderRepository: OrderRepository) { }
@@ -12,17 +12,25 @@ export class OrderProcessor {
     parseOrderMessage(message: string): { productName: string; amount: number } | null {
         try {
             // Regular expression to match the pattern "product name - amount(52k)"
-            const regex = /(.+)\s*-\s*(\d+)k/i;
-            const match = message.match(regex);
+            let regex = /(.+?)\s*-\s*(\d+)k$/i;
+            let match = message.match(regex);
 
+            if (!match) {
+                // Second pattern: "product name amount(52k)"
+                regex = /(.+?)\s+(\d+)k$/i;
+                match = message.match(regex);
+            }
             if (match) {
                 const productName = match[1].trim();
                 // Convert "52k" to 52000
-                const amount = parseInt(match[2]) * 1000;
+                const thousands = parseInt(match[2].replace('k', '.')) * 1000;
+                const remainder = match[3] ? parseInt(match[3]) : 0;
+                const amount = Math.round(thousands + (remainder ? 1000 : 0));
 
                 return { productName, amount };
             }
 
+            // return { productName: message, amount: 0 };
             return null;
         } catch (error) {
             console.error('Error parsing order message:', error);
@@ -31,14 +39,18 @@ export class OrderProcessor {
     }
 
     async saveOrder(userId: number, chatId: number, message: string): Promise<IOrder | null> {
-        const parsedOrder = this.parseOrderMessage(message);
-
+        let parsedOrder = this.parseOrderMessage(message);
+        
         if (!parsedOrder) return null;
-
-        // const checkOrder = await Order.findOne({ userId });
-        // if (checkOrder) {
-
+        // const productRepo = new ProductRepository();
+        // const products = await productRepo.searchProducts(parsedOrder.productName);
+        // const product = await this.filterProduct(products)
+        // if (product) {
+        //     parsedOrder = product;
+        // } else {
+        //     return product
         // }
+
         const order: any = {
             userId,
             chatId,
@@ -49,6 +61,41 @@ export class OrderProcessor {
 
         await this.orderRepository.createOrUpdate(order);
         return order;
+    }
+
+    async filterProduct(products: IProducts[]): Promise<{ productName: string; amount: number } | null> {
+        let productInfo = {
+            productName: '',
+            amount: 0
+        };
+        const orders = await this.orderRepository.getOrdersForDay();
+        for (const order of orders) {
+            const limitProduct = products.find(product => {
+                return product.name === order.productName && product.discount_remaining_quantity > 0
+            });
+            const productData = products.find(product => {
+                return product.name == order.productName
+            });
+            if (limitProduct) {
+
+            } else {
+                if (!productData) return null;
+                const findSize = productData?.options?.find((option: any) => {
+                    return option.name === "Size"
+                })
+                const price = findSize?.option_items?.items[0]?.price?.value && findSize?.option_items?.items[0]?.price?.value > 0 ? 
+                    findSize?.option_items?.items[0]?.price?.value : 0
+                productInfo = {
+                    productName: productData.name,
+                    amount: price
+                }
+            }
+            for (const product of products) {
+                if (order.productName === product.name && product.discount_remaining_quantity > 0) {
+                }
+            }
+        }
+        return productInfo;
     }
 
     async calculateDailyTotals(date: Date = new Date()): Promise<IDailyTotal[]> {
@@ -135,6 +182,7 @@ export class OrderProcessor {
                 }
                 const dailyCronJob = new DailySummaryCronJob(params.timeJob, params.functionJob);
                 dailyCronJob.updateCronTime(params.timeJob, params.functionJob);
+                dailyCronJob.start();
             }
         }
     }

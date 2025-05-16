@@ -1,4 +1,5 @@
-import { Bot, Context, session, webhookCallback } from 'grammy';
+import { ProductRepository } from './../database/repository';
+import { Bot, Context, session } from 'grammy';
 import { OrderProcessor } from '../services/orderProcessor';
 import { defaultCronDays, MyContext, SessionData } from '../constants/common';
 import mongoose from 'mongoose';
@@ -36,7 +37,7 @@ export class TelegramBot {
                 collection: collection as any,
             })
         }));
-        webhookCallback(this.bot, "https");
+
         // Add middleware to save user and chat information
         this.bot.use(saveUserAndChatMiddleware);
         // Init cronJob timer
@@ -90,6 +91,11 @@ export class TelegramBot {
                     const savedOrder = await this.orderProcessor.saveOrder(userId, chatId, text);
                     if (savedOrder) {
                         await ctx.react(  '👍');
+                        // if (savedOrder.productName && savedOrder?.amount > 0) {
+                        //     await ctx.react(  '👍');
+                        // } else {
+                        //     await ctx.reply('❌ Invalid product name or format. Please try different name or format e.g. "Cafe sữa đã - 52k" again.');
+                        // }
                         // await ctx.reply(
                         //     `✅ Order saved: ${savedOrder.productName} - ${savedOrder.amount / 1000}k`,
                         //     { reply_to_message_id: ctx.msg.message_id }

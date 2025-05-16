@@ -1,4 +1,5 @@
 import { CronJob } from "cron";
+import { abbreviationMap } from "../constants/common";
 
 export function formatTime(date: Date): string {
     const hours = date.getHours().toString().padStart(2, '0');
@@ -27,4 +28,22 @@ export function stopExistingJob(userCronJobs: Map<string, CronJob>, jobKey: stri
         existingJob.stop();
         userCronJobs.delete(jobKey);
     }
+}
+
+export function normalizeText(text: string) {
+    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+        .toLowerCase()
+        .replace(/\s+/g, ' ') // Clean multiple spaces
+        .trim();
+}
+
+export function expandAbbreviations(input: string) {
+    return input
+        .toLowerCase()
+        .split(/\s+/)
+        .map(word => abbreviationMap[word] || word)
+        .join(" ");
 }

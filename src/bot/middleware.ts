@@ -2,6 +2,7 @@ import { ChatRepository, UserRepository } from './../database/repository';
 import { Context, NextFunction, SessionFlavor } from 'grammy';
 import { config } from '../config';
 import { SessionData } from '../constants/common';
+import { logger } from '../utils/logger';
 
 export type BotContext = Context & SessionFlavor<SessionData>;
 
@@ -38,6 +39,7 @@ export async function saveUserAndChatMiddleware(ctx: BotContext, next: NextFunct
         }
     } catch (error) {
         console.error('Error in save user/chat middleware:', error);
+        logger.error('Error in save user/chat middleware:', error);
         // Continue execution even if there's an error
     }
 

@@ -1,8 +1,6 @@
 import mongoose from 'mongoose';
-import { Chat, IChat } from '../models/chats';
-import { IUser, User } from '../models/user';
-import { IOrder, Order } from '../models/orders';
 import { config } from '../config';
+import { logger } from '../utils/logger';
 
 export class Database {
     constructor(private uri: string = config.mongodb.uri, private dbName: string = config.mongodb.dbName) {
@@ -15,6 +13,7 @@ export class Database {
             console.log('Connected to MongoDB');
         } catch (error) {
             console.error('Failed to connect to MongoDB:', error);
+            logger.error('Failed to connect to MongoDB' + error);
             throw error;
         }
     }

@@ -24,9 +24,11 @@
     "@google/generative-ai": "^0.24.0",
     "@types/node": "^22.15.1",
     "cron": "^4.3.0",
+    "express": "^5.1.0",
     "pm2": "^6.0.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "winston": "^3.17.0"
   }
 }

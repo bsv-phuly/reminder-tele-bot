@@ -1,5 +1,27 @@
+import express from 'express';
 import { Database } from './database/db';
 import { TelegramBot } from './bot/TelegramBot';
+import { logger } from './utils/logger';
+import { config } from './config';
+// import { productsRouter, test } from './api/v1/controllers/ProductController';
+import routes from './routes/index.route'
+const app = express();
+const port = config.port;
+
+const initApi = () => {
+    try {
+        // app.use(productsRouter);
+        // app.use("/api/v1/test", test);
+        app.use(express.json());
+        app.use(routes);
+        app.listen(port, () => {
+            console.log(`Server is running on port ${port}`);
+            logger.info(`Server is running on port ${port}`);
+        });
+    } catch (error) {
+        logger.error('Error api' + error);
+    }
+}
 
 async function main() {
     try {
@@ -8,6 +30,7 @@ async function main() {
         const db = new Database();
         await db.connect();
         const teleBot = new TelegramBot();
+        initApi();
         // Start the bot
         await teleBot.start();
         process.on('SIGINT', async () => {
@@ -17,7 +40,10 @@ async function main() {
             process.exit(0);
         });
     } catch (error) {
-        console.error('Failed to start application:', error);
+        // Handle errors
+        const errorMessage = 'Failed to start application:';
+        console.error(errorMessage + error);
+        logger.error(errorMessage, error);
         process.exit(1);
     }
 }
